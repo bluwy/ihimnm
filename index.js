@@ -61,10 +61,13 @@ function crawlDependencies(pkgJsonPath, parentDepNames, isRoot = false) {
     if (parentDepNames.includes(depName)) continue
 
     const depPkgJsonPath = findPkgJsonPath(depName, path.dirname(pkgJsonPath))
+    if (!depPkgJsonPath) continue
+
     const nestedFound = crawlDependencies(
       depPkgJsonPath,
       isRoot ? [] : parentDepNames.concat(pkgJson.name)
     )
+
     found = found || nestedFound
   }
 
@@ -133,10 +136,14 @@ function findNestedPkgJsonPathsFromDir(dir, currentDepth = 0) {
 
 /**
  * @param {string} depName
- * @param {string} parentPackageNames
+ * @param {string[]} parentPackageNames
  */
 function logDep(depName, parentPackageNames) {
-  console.log(`${dim(parentPackageNames.join(' > '))} > ${red(depName)}`)
+  console.log(
+    dim(parentPackageNames.join(' > ')) +
+      (parentPackageNames.length ? ' > ' : '') +
+      red(depName)
+  )
 }
 
 /**
