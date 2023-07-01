@@ -57,6 +57,9 @@ function crawlDependencies(pkgJsonPath, parentDepNames, isRoot = false) {
   }
 
   for (const depName of pkgDependencies) {
+    // Prevent dep loop
+    if (parentDepNames.includes(depName)) continue
+
     const depPkgJsonPath = findPkgJsonPath(depName, path.dirname(pkgJsonPath))
     const nestedFound = crawlDependencies(
       depPkgJsonPath,
