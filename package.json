@@ -1,0 +1,17 @@
+{
+  "name": "ihimnm",
+  "version": "0.1.0",
+  "type": "module",
+  "author": "Bjorn Lu",
+  "license": "MIT",
+  "bin": "./index.js",
+  "files": ["index.js"],
+  "funding": "https://bjornlu.com/sponsor",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bluwy/ihimnm.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bluwy/ihimnm/issues"
+  }
+}
