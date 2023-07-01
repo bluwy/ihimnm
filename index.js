@@ -3,13 +3,35 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const packageJsonPath = findClosestPkgJsonPath(process.cwd())
-if (!packageJsonPath) {
-  console.error(`No closest package.json found from ${process.cwd()}`)
-  process.exit(1)
-}
+const isRecursive = process.argv.includes('-r')
+const ignoredFileNameRe = /^(\.|node_modules|dist|build|output|cache)/
+const maxNestedDepth = 10
 
-crawlDependencies(packageJsonPath, [], true)
+// If not recursive, use closest package.json
+if (!isRecursive) {
+  const packageJsonPath = findClosestPkgJsonPath(process.cwd())
+  if (!packageJsonPath) {
+    console.error(`No closest package.json found from ${process.cwd()}`)
+    process.exit(1)
+  }
+
+  const found = crawlDependencies(packageJsonPath, [], true)
+  if (!found) console.log(green('None found!'))
+}
+// If recursive, use nested package.json from cwd
+else {
+  const packageJsonPaths = findNestedPkgJsonPathsFromDir(process.cwd())
+  if (!packageJsonPaths.length) {
+    console.error(`No nested package.json found from ${process.cwd()}`)
+    process.exit(1)
+  }
+
+  for (const packageJsonPath of packageJsonPaths) {
+    console.log(`${packageJsonPath}:`)
+    const found = crawlDependencies(packageJsonPath, [], true)
+    if (!found) console.log(green('None found!'))
+  }
+}
 
 /**
  * @param {string} pkgJsonPath
@@ -17,6 +39,7 @@ crawlDependencies(packageJsonPath, [], true)
  * @param {boolean} isRoot
  */
 function crawlDependencies(pkgJsonPath, parentDepNames, isRoot = false) {
+  let found = false
   const pkgJsonContent = fs.readFileSync(pkgJsonPath, 'utf8')
   const pkgJson = JSON.parse(pkgJsonContent)
   const pkgDependencies = Object.keys(pkgJson.dependencies || {})
@@ -30,15 +53,19 @@ function crawlDependencies(pkgJsonPath, parentDepNames, isRoot = false) {
   // - from @.../eslint-config dev dep
   else if (pkgJsonContent.includes('ljharb')) {
     logDep(pkgJson.name, parentDepNames)
+    found = true
   }
 
   for (const depName of pkgDependencies) {
     const depPkgJsonPath = findPkgJsonPath(depName, path.dirname(pkgJsonPath))
-    crawlDependencies(
+    const nestedFound = crawlDependencies(
       depPkgJsonPath,
       isRoot ? [] : parentDepNames.concat(pkgJson.name)
     )
+    found = found || nestedFound
   }
+
+  return found
 }
 
 /**
@@ -79,16 +106,53 @@ function findPkgJsonPath(pkgName, basedir) {
 }
 
 /**
+ * @param {string} dir
+ */
+function findNestedPkgJsonPathsFromDir(dir, currentDepth = 0) {
+  /** @type {string[]} */
+  const pkgJsonPaths = []
+  const files = fs.readdirSync(dir)
+  for (const file of files) {
+    if (!ignoredFileNameRe.test(file)) {
+      const filePath = path.join(dir, file)
+      const stat = fs.statSync(filePath)
+      if (stat.isFile() && file === 'package.json') {
+        pkgJsonPaths.push(filePath)
+      } else if (stat.isDirectory() && currentDepth < maxNestedDepth) {
+        pkgJsonPaths.push(
+          ...findNestedPkgJsonPathsFromDir(filePath, currentDepth + 1)
+        )
+      }
+    }
+  }
+  return pkgJsonPaths
+}
+
+/**
  * @param {string} depName
  * @param {string} parentPackageNames
  */
 function logDep(depName, parentPackageNames) {
-  console.log(`${parentPackageNames.join(' > ')} > ${highlight(depName)}`)
+  console.log(`${dim(parentPackageNames.join(' > '))} > ${red(depName)}`)
 }
 
 /**
  * @param {string} str
  */
-function highlight(str) {
+function red(str) {
   return `\x1b[1m\x1b[31m${str}\x1b[0m`
+}
+
+/**
+ * @param {string} str
+ */
+function green(str) {
+  return `\x1b[1m\x1b[32m${str}\x1b[0m`
+}
+
+/**
+ * @param {string} str
+ */
+function dim(str) {
+  return `\x1b[2m${str}\x1b[0m`
 }
