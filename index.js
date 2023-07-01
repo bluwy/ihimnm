@@ -6,8 +6,8 @@ import path from 'node:path'
 const isRecursive = process.argv.includes('-r')
 const ignoredFileNameRe = /^(\.|node_modules|dist|build|output|cache)/
 const maxNestedDepth = 10
-/** @type {Set<string>} */
-const allFoundDepNames = new Set()
+/** @type {Map<string, number>} */
+const allFoundDeps = new Map()
 
 // If not recursive, use closest package.json
 if (!isRecursive) {
@@ -35,10 +35,16 @@ else {
   }
 }
 
-if (allFoundDepNames.size) {
+if (allFoundDeps.size) {
   console.log(`Summary of all found dependencies:`)
-  for (const depName of Array.from(allFoundDepNames).sort()) {
-    console.log(`- ${red(depName)}`)
+  const sortedDepNames = Array.from(allFoundDeps.keys()).sort()
+  const padNum = sortedDepNames.length.toString().length + 1
+  for (let i = 0; i < sortedDepNames.length; i++) {
+    const depName = sortedDepNames[i]
+    const numStr = dim(`${i + 1}.`.padStart(padNum))
+    console.log(
+      `${numStr} ${red(depName)} ${dim(`(${allFoundDeps.get(depName)})`)}`
+    )
   }
 }
 
@@ -62,8 +68,9 @@ function crawlDependencies(pkgJsonPath, parentDepNames, isRoot = false) {
   // - from @.../eslint-config dev dep
   else if (pkgJsonContent.includes('ljharb')) {
     logDep(pkgJson.name, parentDepNames)
-    allFoundDepNames.add(pkgJson.name)
     found = true
+    const foundCount = allFoundDeps.get(pkgJson.name) || 0
+    allFoundDeps.set(pkgJson.name, foundCount + 1)
   }
 
   for (const depName of pkgDependencies) {
