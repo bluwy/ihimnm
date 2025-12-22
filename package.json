@@ -4,7 +4,7 @@
   "type": "module",
   "author": "Bjorn Lu",
   "license": "MIT",
-  "bin": "./index.js",
+  "bin": "index.js",
   "files": ["index.js"],
   "funding": "https://bjornlu.com/sponsor",
   "repository": {

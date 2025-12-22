@@ -11,6 +11,9 @@ npx ihimnm
 # Search nested package.json files and find deps matching the criteria
 # (useful for monorepos)
 npx ihimnm -r
+
+# In case there's someone else you want to look for
+npx ihimnm -u <npm-username>
 ```
 
 ## License

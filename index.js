@@ -4,6 +4,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 
 const isRecursive = process.argv.includes('-r')
+const user = getUser()
 const ignoredFileNameRe = /^(\.|node_modules|dist|build|output|cache)/
 const maxNestedDepth = 10
 /** @type {Map<string, number>} */
@@ -65,7 +66,7 @@ function crawlDependencies(pkgJsonPath, parentDepNames, isRoot = false) {
   // - from github url
   // - from contributors list
   // - from @.../eslint-config dev dep
-  else if (pkgJsonContent.includes('ljharb')) {
+  else if (pkgJsonContent.includes(user)) {
     logDep(pkgJson.name, parentDepNames)
     found = true
     const foundCount = allFoundDeps.get(pkgJson.name) || 0
@@ -146,6 +147,14 @@ function findNestedPkgJsonPathsFromDir(dir, currentDepth = 0) {
     }
   }
   return pkgJsonPaths
+}
+
+function getUser() {
+  const userIndex = process.argv.indexOf('-u')
+  if (userIndex !== -1 && process.argv.length > userIndex + 1) {
+    return process.argv[userIndex + 1]
+  }
+  return 'ljharb'
 }
 
 /**
