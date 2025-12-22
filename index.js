@@ -3,8 +3,8 @@
 import fs from 'node:fs'
 import path from 'node:path'
 
-const isRecursive = process.argv.includes('-r')
 const user = getUser()
+const isRecursive = process.argv.includes('-r')
 const ignoredFileNameRe = /^(\.|node_modules|dist|build|output|cache)/
 const maxNestedDepth = 10
 /** @type {Map<string, number>} */
@@ -154,7 +154,7 @@ function getUser() {
   if (userIndex !== -1 && process.argv.length > userIndex + 1) {
     return process.argv[userIndex + 1]
   }
-  return 'ljharb'
+  return atob('bGpoYXJi')
 }
 
 /**
