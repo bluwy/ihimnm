@@ -8,12 +8,13 @@ const ignoredFileNameRe = /^(\.|node_modules|dist|build|output|cache)/
 const maxNestedDepth = 10
 /** @type {Map<string, number>} */
 const allFoundDeps = new Map()
+const cwd = process.cwd()
 
 // If not recursive, use closest package.json
 if (!isRecursive) {
-  const packageJsonPath = findClosestPkgJsonPath(process.cwd())
+  const packageJsonPath = findClosestPkgJsonPath(cwd)
   if (!packageJsonPath) {
-    console.error(`No closest package.json found from ${process.cwd()}`)
+    console.error(`No closest package.json found from ${cwd}`)
     process.exit(1)
   }
 
@@ -22,9 +23,9 @@ if (!isRecursive) {
 }
 // If recursive, use nested package.json from cwd
 else {
-  const packageJsonPaths = findNestedPkgJsonPathsFromDir(process.cwd())
+  const packageJsonPaths = findNestedPkgJsonPathsFromDir(cwd)
   if (!packageJsonPaths.length) {
-    console.error(`No nested package.json found from ${process.cwd()}`)
+    console.error(`No nested package.json found from ${cwd}`)
     process.exit(1)
   }
 
@@ -42,9 +43,7 @@ if (allFoundDeps.size) {
   for (let i = 0; i < sortedDepNames.length; i++) {
     const depName = sortedDepNames[i]
     const numStr = dim(`${i + 1}.`.padStart(padNum))
-    console.log(
-      `${numStr} ${red(depName)} ${dim(`(${allFoundDeps.get(depName)})`)}`
-    )
+    console.log(`${numStr} ${red(depName)} ${dim(`(${allFoundDeps.get(depName)})`)}`)
   }
 }
 
@@ -142,9 +141,7 @@ function findNestedPkgJsonPathsFromDir(dir, currentDepth = 0) {
       if (stat.isFile() && file === 'package.json') {
         pkgJsonPaths.push(filePath)
       } else if (stat.isDirectory() && currentDepth < maxNestedDepth) {
-        pkgJsonPaths.push(
-          ...findNestedPkgJsonPathsFromDir(filePath, currentDepth + 1)
-        )
+        pkgJsonPaths.push(...findNestedPkgJsonPathsFromDir(filePath, currentDepth + 1))
       }
     }
   }
@@ -156,9 +153,7 @@ function findNestedPkgJsonPathsFromDir(dir, currentDepth = 0) {
  * @param {string[]} parentPackageNames
  */
 function logDep(depName, parentPackageNames) {
-  console.log(
-    dim(parentPackageNames.map((n) => n + ' > ').join('')) + red(depName)
-  )
+  console.log(dim(parentPackageNames.map((n) => n + ' > ').join('')) + red(depName))
 }
 
 /**
