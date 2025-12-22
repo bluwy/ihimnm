@@ -56,7 +56,7 @@ if (allFoundDeps.size) {
 function crawlDependencies(pkgJsonPath, parentDepNames, isRoot = false) {
   let found = false
   const pkgJsonContent = fs.readFileSync(pkgJsonPath, 'utf8')
-  const pkgJson = JSON.parse(pkgJsonContent)
+  const pkgJson = JSON.parse(pkgJsonContent.trim()) // trim to remove BOM if any
   const pkgDependencies = Object.keys(pkgJson.dependencies || {})
 
   if (isRoot) {
