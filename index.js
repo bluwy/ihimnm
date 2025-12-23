@@ -32,7 +32,7 @@ else {
 
   for (const packageJsonPath of packageJsonPaths) {
     console.log(`${packageJsonPath}:`)
-    const found = crawlDependencies(packageJsonPath, [], true)
+    const found = crawlDependencies(packageJsonPath, [], true, packageJsonPaths)
     if (!found) console.log(green('None found!'))
   }
 }
@@ -52,8 +52,9 @@ if (allFoundDeps.size) {
  * @param {string} pkgJsonPath
  * @param {string[]} parentDepNames
  * @param {boolean} isRoot
+ * @param {string[]} skipPaths
  */
-function crawlDependencies(pkgJsonPath, parentDepNames, isRoot = false) {
+function crawlDependencies(pkgJsonPath, parentDepNames, isRoot = false, skipPaths = []) {
   let found = false
   const pkgJsonContent = fs.readFileSync(pkgJsonPath, 'utf8')
   const pkgJson = JSON.parse(pkgJsonContent.trim()) // trim to remove BOM if any
@@ -79,10 +80,13 @@ function crawlDependencies(pkgJsonPath, parentDepNames, isRoot = false) {
 
     const depPkgJsonPath = findPkgJsonPath(depName, path.dirname(pkgJsonPath))
     if (!depPkgJsonPath) continue
+    if (skipPaths.includes(depPkgJsonPath)) continue
 
     const nestedFound = crawlDependencies(
       depPkgJsonPath,
-      isRoot ? [] : parentDepNames.concat(pkgJson.name)
+      isRoot ? [] : parentDepNames.concat(pkgJson.name),
+      false,
+      skipPaths
     )
 
     found = found || nestedFound
