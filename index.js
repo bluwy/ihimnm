@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+// @ts-check
 import fs from 'node:fs'
 import path from 'node:path'
 
@@ -53,6 +54,7 @@ if (allFoundDeps.size) {
  * @param {string[]} parentDepNames
  * @param {boolean} isRoot
  * @param {string[]} skipPaths
+ * @return {boolean}
  */
 function crawlDependencies(pkgJsonPath, parentDepNames, isRoot = false, skipPaths = []) {
   let found = false
