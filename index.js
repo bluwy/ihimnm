@@ -50,11 +50,12 @@ if (allFoundDeps.size) {
   const padNum = sortedDepNames.length.toString().length + 1
   for (let i = 0; i < sortedDepNames.length; i++) {
     const depName = sortedDepNames[i]
-    const numStr = dim(`${i + 1}.`.padStart(padNum))
-    console.log(`${numStr} ${red(depName)} ${dim(`(${allFoundDeps.get(depName)})`)}`)
+    const numStr = styleText('dim', `${i + 1}.`.padStart(padNum))
+    const depNum = allFoundDeps.get(depName) || 0
+    console.log(`${numStr} ${styleText('red', depName)} ${styleText('dim', `(${depNum})`)}`)
   }
 } else {
-  console.log(green('None found!'))
+  console.log(styleText('green', 'None found!'))
 }
 
 /**
@@ -172,26 +173,25 @@ function getUser() {
 function logDep(depPath) {
   const parents = depPath.slice(0, -1)
   const child = depPath[depPath.length - 1]
-  console.log(dim(parents.map((n) => n + ' > ').join('')) + red(child))
+  console.log(styleText('dim', parents.map((n) => n + ' > ').join('')) + styleText('red', child))
 }
 
 /**
+ * Import from `node:util` in the future when bumping required node version
+ * @param {string | string[]} color
  * @param {string} str
  */
-function red(str) {
-  return `\x1b[1m\x1b[31m${str}\x1b[0m`
-}
-
-/**
- * @param {string} str
- */
-function green(str) {
-  return `\x1b[1m\x1b[32m${str}\x1b[0m`
-}
-
-/**
- * @param {string} str
- */
-function dim(str) {
-  return `\x1b[2m${str}\x1b[0m`
+function styleText(color, str) {
+  /** @type {Record<string, string>} */
+  const colors = {
+    red: '\x1b[31m',
+    green: '\x1b[32m',
+    dim: '\x1b[2m',
+    bold: '\x1b[1m',
+  }
+  const reset = '\x1b[0m'
+  const prefix = Array.isArray(color)
+    ? color.map((c) => colors[c] || '').join('')
+    : colors[color] || ''
+  return `${prefix}${str}${reset}`
 }
