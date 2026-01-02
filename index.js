@@ -20,8 +20,7 @@ if (!isRecursive) {
     process.exit(1)
   }
 
-  const found = crawlDependencies(packageJsonPath, [], true)
-  if (!found) console.log(green('None found!'))
+  crawlDependencies(packageJsonPath, [], logDep, true)
 }
 // If recursive, use nested package.json from cwd
 else {
@@ -32,9 +31,16 @@ else {
   }
 
   for (const packageJsonPath of packageJsonPaths) {
-    console.log(`${packageJsonPath}:`)
-    const found = crawlDependencies(packageJsonPath, [], true, packageJsonPaths)
-    if (!found) console.log(green('None found!'))
+    let hasLogged = false
+    const _logDep = (/** @type {string[]} */ depPath) => {
+      if (!hasLogged) {
+        console.log(`${packageJsonPath}:`)
+        hasLogged = true
+      }
+      logDep(depPath)
+    }
+
+    crawlDependencies(packageJsonPath, [], _logDep, true, packageJsonPaths)
   }
 }
 
@@ -47,17 +53,18 @@ if (allFoundDeps.size) {
     const numStr = dim(`${i + 1}.`.padStart(padNum))
     console.log(`${numStr} ${red(depName)} ${dim(`(${allFoundDeps.get(depName)})`)}`)
   }
+} else {
+  console.log(green('None found!'))
 }
 
 /**
  * @param {string} pkgJsonPath
  * @param {string[]} parentDepNames
+ * @param {(depPath: string[]) => void} onMatch
  * @param {boolean} isRoot
  * @param {string[]} skipPaths
- * @return {boolean}
  */
-function crawlDependencies(pkgJsonPath, parentDepNames, isRoot = false, skipPaths = []) {
-  let found = false
+function crawlDependencies(pkgJsonPath, parentDepNames, onMatch, isRoot = false, skipPaths = []) {
   const pkgJsonContent = fs.readFileSync(pkgJsonPath, 'utf8')
   const pkgJson = JSON.parse(pkgJsonContent.trim()) // trim to remove BOM if any
   const pkgDependencies = Object.keys(pkgJson.dependencies || {})
@@ -70,8 +77,7 @@ function crawlDependencies(pkgJsonPath, parentDepNames, isRoot = false, skipPath
   // - from contributors list
   // - from @.../eslint-config dev dep
   else if (pkgJsonContent.includes(user)) {
-    logDep(pkgJson.name, parentDepNames)
-    found = true
+    onMatch(parentDepNames.concat(pkgJson.name))
     const foundCount = allFoundDeps.get(pkgJson.name) || 0
     allFoundDeps.set(pkgJson.name, foundCount + 1)
   }
@@ -87,14 +93,11 @@ function crawlDependencies(pkgJsonPath, parentDepNames, isRoot = false, skipPath
     const nestedFound = crawlDependencies(
       depPkgJsonPath,
       isRoot ? [] : parentDepNames.concat(pkgJson.name),
+      onMatch,
       false,
       skipPaths
     )
-
-    found = found || nestedFound
   }
-
-  return found
 }
 
 /**
@@ -164,11 +167,12 @@ function getUser() {
 }
 
 /**
- * @param {string} depName
- * @param {string[]} parentPackageNames
+ * @param {string[]} depPath
  */
-function logDep(depName, parentPackageNames) {
-  console.log(dim(parentPackageNames.map((n) => n + ' > ').join('')) + red(depName))
+function logDep(depPath) {
+  const parents = depPath.slice(0, -1)
+  const child = depPath[depPath.length - 1]
+  console.log(dim(parents.map((n) => n + ' > ').join('')) + red(child))
 }
 
 /**
